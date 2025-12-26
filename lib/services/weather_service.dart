@@ -22,26 +22,52 @@ class WeatherService {
   }
 
   Future<String> getCurrentCity() async {
-    // 1. التأكد من تفعيل خدمة الموقع
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+    try {
+      // 1. التأكد من تفعيل خدمة الموقع
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // بدلاً من الخطأ، نعود لمدينة افتراضية
+        return "Tripoli";
+      }
+
+      // 2. التحقق من الأذونات وطلبها
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return "Tripoli"; // إذا رفض المستخدم، نعود لمدينة افتراضية
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        return "Tripoli"; // إذا رفض نهائياً
+      }
+
+      // 3. الحصول على الإحداثيات الحالية
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // 4. تحويل الإحداثيات لاسم مدينة
+      // ملاحظة: قد تفشل هذه الخطوة في بعض المحاكيات، لذا وضعناها داخل try/catch
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      // التأكد من أن القائمة ليست فارغة قبل أخذ أول عنصر
+      if (placemarks.isNotEmpty) {
+        String? city = placemarks[0].locality;
+        // أحياناً يكون locality فارغاً، نجرب administrativeArea (المنطقة الإدارية)
+        return city ?? placemarks[0].administrativeArea ?? "Tripoli";
+      } else {
+        return "Tripoli";
+      }
+
+    } catch (e) {
+      print("حدث خطأ في تحديد الموقع: $e");
+      return "Tripoli"; // في حال أي خطأ آخر، نعود للمدينة الافتراضية
     }
-
-    // 2. الحصول على الموقع الحالي
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-
-    // 3. تحويل الإحداثيات إلى اسم مدينة
-    List<Placemark> placemarks = await placemarkFromCoordinates(
-      position.latitude,
-      position.longitude,
-    );
-
-    // استخراج اسم المدينة (أو المنطقة إذا لم تتوفر المدينة)
-    String? city = placemarks[0].locality;
-    return city ?? "Tripoli"; // قيمة افتراضية في حال الفشل
   }
 
   // دالة لجلب توقعات 5 أيام

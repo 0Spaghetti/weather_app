@@ -76,7 +76,10 @@ class _WeatherPageState extends State<WeatherPage> {
     }
   }
 // دالة لإظهار تفاصيل اليوم في نافذة سفلية
-  void _showDailyDetails(BuildContext context, WeatherModel day, bool isGlass) {
+  void _showDailyDetails(BuildContext context, WeatherModel day, bool isGlass, DateTime date) {
+
+    final lang = Provider.of<SettingsProvider>(context, listen: false).language;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent, // خلفية شفافة لتطبيق التصميم الخاص بنا
@@ -104,7 +107,7 @@ class _WeatherPageState extends State<WeatherPage> {
 
                 // العنوان: اسم اليوم
                 Text(
-                  DateFormat('EEEE, d MMMM', 'ar').format(DateTime.now()), // ملاحظة: للتاريخ الدقيق يفضل تمرير تاريخ اليوم الفعلي لو كان مخزناً
+                  DateFormat('EEEE, d MMMM', lang).format(date),
                   style: TextStyle(color: isGlass ? Colors.white : Colors.black, fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
@@ -496,8 +499,12 @@ class _WeatherPageState extends State<WeatherPage> {
                               // نمرر التاريخ التقريبي لليوم (index + 1)
                               // ونمرر "true" إذا كان الوضع الزجاجي مفعلاً أو الوضع الليلي لتحسين ألوان النصوص
                               bool isGlassMode = settings.enableGlassmorphism || settings.isDarkMode;
-                              _showDailyDetails(context, dayWeather, isGlassMode);
-                            },
+                              // 1. حساب تاريخ هذا اليوم (اليوم الحالي + ترتيب العنصر + 1)
+                              DateTime date = DateTime.now().add(Duration(days: index + 1));
+
+                              // 2. تمرير التاريخ للدالة
+                              _showDailyDetails(context, dayWeather, isGlassMode, date);
+                              },
                             child: settings.enableGlassmorphism
                                 ? ClipRRect(
                               borderRadius: BorderRadius.circular(15),
