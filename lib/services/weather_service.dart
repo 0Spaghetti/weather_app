@@ -64,4 +64,20 @@ class WeatherService {
       throw Exception('فشل تحميل التوقعات');
     }
   }
+  // دالة لجلب التوقعات بالساعات (أول 8 قراءات = 24 ساعة)
+  Future<List<WeatherModel>> getHourlyForecast(String cityName, {String lang = 'ar'}) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/forecast?q=$cityName&appid=$apiKey&units=metric&lang=$lang'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final List<dynamic> list = data['list'];
+
+      // نأخذ أول 8 عناصر فقط (8 * 3 ساعات = 24 ساعة)
+      return list.take(8).map((item) => WeatherModel.fromJson(item)).toList();
+    } else {
+      throw Exception('فشل تحميل توقعات الساعات');
+    }
+  }
 }

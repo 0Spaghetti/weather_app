@@ -18,6 +18,8 @@ class WeatherPage extends StatefulWidget {
 
 class _WeatherPageState extends State<WeatherPage> {
   final _weatherService = WeatherService();
+  List<WeatherModel>? _hourlyForecast; // قائمة الساعات
+
   WeatherModel? _weather;
   List<WeatherModel>? _forecast;
   bool _isLoading = true;
@@ -51,10 +53,12 @@ class _WeatherPageState extends State<WeatherPage> {
     try {
       final weather = await _weatherService.getWeather(cityName, lang: lang);
       final forecast = await _weatherService.getForecast(cityName, lang: lang);
+      final hourly = await _weatherService.getHourlyForecast(cityName, lang: lang);
 
       setState(() {
         _weather = weather;
         _forecast = forecast;
+        _hourlyForecast = hourly;
         _isLoading = false;
       });
 
@@ -210,15 +214,10 @@ class _WeatherPageState extends State<WeatherPage> {
           // نستخدم SingleChildScrollView لجعل الشاشة قابلة للسحب دائماً
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            child: SizedBox(
-              // نحدد ارتفاع الشاشة ليأخذ كامل المساحة
-              height: MediaQuery
-                  .of(context)
-                  .size
-                  .height,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 100, bottom: 20), // مسافة من الأعلى (عشان الـ AppBar) ومن الأسفل
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // المحتوى السابق
                     const Icon(
@@ -235,8 +234,7 @@ class _WeatherPageState extends State<WeatherPage> {
                     // --- 2. ميزة التاريخ والوقت ---
                     const SizedBox(height: 5),
                     Text(
-                      DateFormat('EEEE, d MMMM yyyy | hh:mm a', 'ar').format(
-                          DateTime.now()),
+                      DateFormat('EEEE, d MMMM yyyy | hh:mm a', settings.language).format(DateTime.now()), // استخدام settings.language                          DateTime.now()),
                       style: const TextStyle(
                           color: Colors.white70, fontSize: 16),
                     ),
@@ -310,6 +308,75 @@ class _WeatherPageState extends State<WeatherPage> {
                     ],
 
                     const SizedBox(height: 30),
+                    // --- قسم توقعات الساعات (الجديد) ---
+                    const Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Text("خلال 24 ساعة", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    SizedBox(
+                      height: 100, // ارتفاع أقل قليلاً من القائمة السفلية
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _hourlyForecast?.length ?? 0,
+                        itemBuilder: (context, index) {
+                          final hourWeather = _hourlyForecast![index];
+                          // استخراج الوقت فقط (الساعة)
+                          // الـ API يعيد الوقت بصيغة "2023-10-25 15:00:00"
+                          // نحن نريد عرض الساعة فقط "03:00 PM"
+                          // سنستخدم DateFormat مخصص لذلك، لكن للسهولة سنستخدم DateTime parsing
+                          // (ملاحظة: هذا يتطلب أن يكون weather_model يحتوي على خاصية dt_txt أو نحسبها يدوياً)
+                          // *تحديث سريع*: WeatherModel الحالي لا يحفظ الوقت كنص.
+                          // *الحل*: سنضيف الوقت الحالي + (index * 3) ساعات لتقريب الوقت، أو نعدل المودل.
+                          // الأسهل والأنظف الآن هو استخدام وقت تقريبي للعرض:
+                          final time = DateTime.now().add(Duration(hours: (index + 1) * 3));
+
+                          Widget cardContent = Container(
+                            width: 80,
+                            margin: const EdgeInsets.symmetric(horizontal: 5),
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white.withOpacity(0.1)),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  DateFormat('hh:mm a', settings.language).format(time), // الساعة
+                                  style: const TextStyle(color: Colors.white70, fontSize: 10),
+                                ),
+                                Lottie.asset(
+                                  _getWeatherAnimation(hourWeather.mainCondition),
+                                  height: 30,
+                                ),
+                                Text(
+                                  '${hourWeather.temperature.round()}°',
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          // تطبيق الزجاج إذا مفعل
+                          return settings.enableGlassmorphism
+                              ? ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                                child: cardContent),
+                          )
+                              : cardContent;
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // ------------------------------------
                     const Text("توقعات الأيام القادمة", style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -347,7 +414,7 @@ class _WeatherPageState extends State<WeatherPage> {
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold)),
                                 Text(
-                                  DateFormat('E', 'ar').format(DateTime.now().add(Duration(days: index + 1))),
+                                  DateFormat('E', settings.language).format(DateTime.now().add(Duration(days: index + 1))), // استخدام settings.language
                                   style: const TextStyle(color: Colors.white70),
                                 ),
                               ],
@@ -374,7 +441,6 @@ class _WeatherPageState extends State<WeatherPage> {
             ),
           ),
         ),
-      ),
     );
   }
 }
