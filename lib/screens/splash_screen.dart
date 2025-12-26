@@ -1,6 +1,7 @@
-import 'dart:async'; // مكتبة التوقيت
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'weather_page.dart'; // استيراد الصفحة الرئيسية للانتقال إليها
+import 'package:lottie/lottie.dart'; // 1. استيراد مكتبة لوتي
+import 'weather_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,7 +15,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // مؤقت لمدة 3 ثوانٍ ثم ينتقل للصفحة الرئيسية
+    // الانتقال للصفحة الرئيسية بعد 3 ثوانٍ
     Timer(const Duration(seconds: 3), () {
       Navigator.pushReplacement(
         context,
@@ -29,7 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Container(
         width: double.infinity,
         decoration: const BoxDecoration(
-          // تدرج لوني جميل مشابه لتطبيق الطقس
+          // خلفية متدرجة
           gradient: LinearGradient(
             colors: [Colors.blue, Colors.purple],
             begin: Alignment.topRight,
@@ -39,18 +40,16 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 1. أيقونة التطبيق الكبيرة
-            const Icon(
-              Icons.cloud_circle,
-              size: 100,
-              color: Colors.white,
+            // 2. استبدال الأيقونة الثابتة بأنيميشن متحرك
+            Lottie.asset(
+              'lib/assets/sunny.json', // مسار ملف الأنيميشن
+              height: 200, // التحكم بالحجم
             ),
 
             const SizedBox(height: 20),
 
-            // 2. اسم التطبيق
             const Text(
-              "تطبيق الطقس",
+              "Weather App",
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 32,
@@ -60,21 +59,19 @@ class _SplashScreenState extends State<SplashScreen> {
 
             const SizedBox(height: 50),
 
-            // دائرة تحميل صغيرة
             const CircularProgressIndicator(
               color: Colors.white,
             ),
 
             const SizedBox(height: 50),
 
-            // 3. اسمك (حقوق التطوير)
             const Text(
-              "تطوير الطالبين:",
+              "Developed by:",
               style: TextStyle(color: Colors.white70, fontSize: 16),
             ),
             const SizedBox(height: 10),
             const Text(
-              "مهند & محمد", // ⚠️ اكتب اسمك هنا
+              "Dev: مهند & محمد", // ⚠️ لا تنس كتابة اسمك
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 22,

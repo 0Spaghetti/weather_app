@@ -75,7 +75,79 @@ class _WeatherPageState extends State<WeatherPage> {
       );
     }
   }
+// دالة لإظهار تفاصيل اليوم في نافذة سفلية
+  void _showDailyDetails(BuildContext context, WeatherModel day, bool isGlass) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent, // خلفية شفافة لتطبيق التصميم الخاص بنا
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            // لون الخلفية يعتمد على الوضع (زجاجي أو عادي)
+            color: isGlass ? Colors.black.withOpacity(0.6) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+            // تأثير ضبابي للخلفية (Blur)
+            boxShadow: [
+              if (!isGlass)
+                const BoxShadow(color: Colors.black26, blurRadius: 10, spreadRadius: 5)
+            ],
+          ),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: isGlass ? 10 : 0, sigmaY: isGlass ? 10 : 0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // يأخذ حجم المحتوى فقط
+              children: [
+                // خط صغير في الأعلى للسحب
+                Container(width: 50, height: 5, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(10))),
+                const SizedBox(height: 20),
 
+                // العنوان: اسم اليوم
+                Text(
+                  DateFormat('EEEE, d MMMM', 'ar').format(DateTime.now()), // ملاحظة: للتاريخ الدقيق يفضل تمرير تاريخ اليوم الفعلي لو كان مخزناً
+                  style: TextStyle(color: isGlass ? Colors.white : Colors.black, fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+
+                // الوصف (مثلاً: أمطار خفيفة)
+                Text(
+                  day.description,
+                  style: TextStyle(color: isGlass ? Colors.white70 : Colors.grey[700], fontSize: 18),
+                ),
+
+                const SizedBox(height: 30),
+
+                // صف التفاصيل (الحرارة، الرياح، الرطوبة)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildDetailItem(Icons.thermostat, "${day.temperature.round()}°C", "الحرارة", isGlass),
+                    _buildDetailItem(Icons.water_drop, "${day.humidity}%", "الرطوبة", isGlass),
+                    _buildDetailItem(Icons.air, "${day.windSpeed} km/h", "الرياح", isGlass),
+                  ],
+                ),
+
+                const SizedBox(height: 30),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // عنصر مساعد لبناء أيقونة التفاصيل
+  Widget _buildDetailItem(IconData icon, String value, String label, bool isDarkInfo) {
+    Color color = isDarkInfo ? Colors.white : Colors.black;
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 30),
+        const SizedBox(height: 5),
+        Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 18)),
+        Text(label, style: TextStyle(color: color.withOpacity(0.7), fontSize: 14)),
+      ],
+    );
+  }
   // دالة إظهار نافذة البحث
   void _showCitySearchDialog() {
     showDialog(
@@ -420,7 +492,24 @@ class _WeatherPageState extends State<WeatherPage> {
                               ],
                             ),
                           );
-
+                          return GestureDetector(
+                            onTap: () {
+                              // عند الضغط، نفتح النافذة بالتفاصيل
+                              // نمرر التاريخ التقريبي لليوم (index + 1)
+                              // ونمرر "true" إذا كان الوضع الزجاجي مفعلاً أو الوضع الليلي لتحسين ألوان النصوص
+                              bool isGlassMode = settings.enableGlassmorphism || settings.isDarkMode;
+                              _showDailyDetails(context, dayWeather, isGlassMode);
+                            },
+                            child: settings.enableGlassmorphism
+                                ? ClipRRect(
+                              borderRadius: BorderRadius.circular(15),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                child: cardContent,
+                              ),
+                            )
+                                : cardContent,
+                          );
                           if (settings.enableGlassmorphism) {
                             return ClipRRect(
                               borderRadius: BorderRadius.circular(15),
