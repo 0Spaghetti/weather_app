@@ -8,8 +8,10 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var settings = Provider.of<SettingsProvider>(context);
-    // تحديد الألوان بناءً على الوضع (فاتح/داكن)
     bool isDark = settings.isDarkMode;
+    // التحقق من اللغة الحالية
+    bool isArabic = settings.language == 'ar';
+
     Color bgColor = isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF6F6F6);
     Color cardColor = isDark ? const Color(0xFF2C2C2C) : Colors.white;
     Color textColor = isDark ? Colors.white : Colors.black;
@@ -17,7 +19,8 @@ class SettingsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-        title: Text("الإعدادات", style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+        // تغيير العنوان حسب اللغة
+        title: Text(isArabic ? "الإعدادات" : "Settings", style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -28,12 +31,12 @@ class SettingsPage extends StatelessWidget {
         child: Column(
           children: [
             // --- قسم المظهر ---
-            _buildSectionHeader("المظهر والعرض", isDark),
+            _buildSectionHeader(isArabic ? "المظهر والعرض" : "Appearance", isDark),
             _buildSettingsCard(
               cardColor,
               [
                 _buildCustomTile(
-                  title: "الوضع الداكن",
+                  title: isArabic ? "الوضع الداكن" : "Dark Mode",
                   icon: Icons.dark_mode,
                   iconColor: Colors.purple,
                   isSwitch: true,
@@ -43,7 +46,7 @@ class SettingsPage extends StatelessWidget {
                 ),
                 _buildDivider(isDark),
                 _buildCustomTile(
-                  title: "تأثير الزجاج (Glassmorphism)",
+                  title: isArabic ? "تأثير الزجاج" : "Glassmorphism",
                   icon: Icons.blur_on,
                   iconColor: Colors.blue,
                   isSwitch: true,
@@ -53,7 +56,7 @@ class SettingsPage extends StatelessWidget {
                 ),
                 _buildDivider(isDark),
                 _buildCustomTile(
-                  title: "لغة التطبيق",
+                  title: isArabic ? "لغة التطبيق" : "Language",
                   icon: Icons.language,
                   iconColor: Colors.teal,
                   isSwitch: false,
@@ -79,13 +82,15 @@ class SettingsPage extends StatelessWidget {
             const SizedBox(height: 20),
 
             // --- قسم الوحدات ---
-            _buildSectionHeader("وحدات القياس", isDark),
+            _buildSectionHeader(isArabic ? "وحدات القياس" : "Units", isDark),
             _buildSettingsCard(
               cardColor,
               [
                 _buildCustomTile(
-                  title: "درجة مئوية (°C)",
-                  subtitle: settings.isCelsius ? "مفعل" : "فهرنهايت مفعل",
+                  title: isArabic ? "درجة مئوية (°C)" : "Celsius (°C)",
+                  subtitle: settings.isCelsius
+                      ? (isArabic ? "مفعل" : "Enabled")
+                      : (isArabic ? "فهرنهايت مفعل" : "Fahrenheit Enabled"),
                   icon: Icons.thermostat,
                   iconColor: Colors.orange,
                   isSwitch: true,
@@ -99,12 +104,12 @@ class SettingsPage extends StatelessWidget {
             const SizedBox(height: 20),
 
             // --- قسم التفاصيل ---
-            _buildSectionHeader("تفاصيل إضافية", isDark),
+            _buildSectionHeader(isArabic ? "تفاصيل إضافية" : "Extra Details", isDark),
             _buildSettingsCard(
               cardColor,
               [
                 _buildCustomTile(
-                  title: "عرض الشروق والغروب",
+                  title: isArabic ? "عرض الشروق والغروب" : "Sunrise & Sunset",
                   icon: Icons.wb_twilight,
                   iconColor: Colors.amber,
                   isSwitch: true,
@@ -116,8 +121,19 @@ class SettingsPage extends StatelessWidget {
             ),
 
             const SizedBox(height: 30),
+
+            // إضافة زر "عن التطبيق"
+            TextButton.icon(
+              onPressed: () => _showAboutDialog(context, isDark, isArabic),
+              icon: Icon(Icons.info_outline, color: Colors.grey.shade500),
+              label: Text(
+                isArabic ? "عن التطبيق" : "About App",
+                style: TextStyle(color: Colors.grey.shade500),
+              ),
+            ),
+
             Text(
-              "الإصدار 1.0.0",
+              "v1.0.0",
               style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
             ),
           ],
@@ -126,11 +142,45 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  // ويدجت لبناء عنوان القسم
+  // --- دالة نافذة "عن التطبيق" (ميزة إضافية) ---
+  void _showAboutDialog(BuildContext context, bool isDark, bool isArabic) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+        title: Text(isArabic ? "عن التطبيق" : "About", style: TextStyle(color: isDark ? Colors.white : Colors.black)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_circle, size: 60, color: Colors.blue),
+            const SizedBox(height: 10),
+            Text(
+              isArabic ? "تم تطوير هذا التطبيق كجزء من مشروع جامعي." : "Developed as a university project.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+            ),
+            const SizedBox(height: 10),
+            Text(isArabic ? "تطوير الطالب: [اسمك هنا]" : "Developer: [Your Name]", style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(isArabic ? "إغلاق" : "Close"),
+          ),
+        ],
+      ),
+    );
+  }
+  // -------------------------------------------
+
+  // ... (باقي الدوال المساعدة _buildSectionHeader وغيرها تبقى كما هي في كودك السابق)
+
   Widget _buildSectionHeader(String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 0, 8, 8),
       child: Align(
+        // محاذاة النص حسب اللغة
         alignment: Alignment.centerRight,
         child: Text(
           title,
@@ -144,7 +194,6 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  // ويدجت لبناء البطاقة الحاوية للإعدادات
   Widget _buildSettingsCard(Color color, List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
@@ -162,7 +211,6 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  // ويدجت مخصص لكل سطر إعدادات (Tile)
   Widget _buildCustomTile({
     required String title,
     required IconData icon,
@@ -204,12 +252,11 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  // خط فاصل بين العناصر
   Widget _buildDivider(bool isDark) {
     return Divider(
       height: 1,
       thickness: 0.5,
-      indent: 60, // يبدأ بعد الأيقونة
+      indent: 60,
       color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
     );
   }

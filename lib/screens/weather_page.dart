@@ -181,10 +181,8 @@ class _WeatherPageState extends State<WeatherPage> {
     );
   }
 
-  // دالة الألوان (كما هي، لا تغيير عليها)
+  // دالة الألوان
   LinearGradient _getBackgroundGradient(String? mainCondition) {
-    // ... (احتفظ بالكود السابق كما هو هنا)
-    // إذا مسحته بالخطأ أخبرني لأعطيك إياه مرة أخرى
     if (mainCondition == null)
       return const LinearGradient(colors: [Colors.blue, Colors.lightBlue]);
     switch (mainCondition.toLowerCase()) {
