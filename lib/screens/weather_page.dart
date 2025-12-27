@@ -267,11 +267,11 @@ class _WeatherPageState extends State<WeatherPage> {
       case 'haze':
       case 'dust':
       case 'fog':
-        return 'lib/assets/cloud.json';
+        return 'lib/assets/cloudy.json';
       case 'rain':
       case 'drizzle':
       case 'shower rain':
-        return 'lib/assets/rain.json';
+        return 'lib/assets/rainy.json';
       case 'thunderstorm':
         return 'lib/assets/thunder.json';
       case 'clear':
@@ -496,14 +496,29 @@ class _WeatherPageState extends State<WeatherPage> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       // اسم اليوم
-                                      Text(
+                                      Expanded(
+                                        child: Text(
                                           DateFormat('EEEE', settings.language).format(date),
-                                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)
+                                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
                                       // الحرارة والأيقونة
                                       Row(
+                                        mainAxisSize: MainAxisSize.min, // مهم جداً: يأخذ أقل مساحة ممكنة
                                         children: [
-                                          Lottie.asset(_getWeatherAnimation(day.mainCondition), height: 40),
+                                          // --- التعديل الجذري هنا ---
+                                          // تحديد العرض والارتفاع معاً لمنع التمدد
+                                          SizedBox(
+                                            width: 40,
+                                            height: 40,
+                                            child: Lottie.asset(
+                                                _getWeatherAnimation(day.mainCondition),
+                                                fit: BoxFit.contain // احتواء الصورة داخل المربع
+                                            ),
+                                          ),
+                                          // -------------------------
+
                                           const SizedBox(width: 10),
                                           Text('${day.temperature.round()}°', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                                         ],
