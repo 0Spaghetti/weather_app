@@ -280,28 +280,43 @@ class _WeatherPageState extends State<WeatherPage> {
         return 'lib/assets/sunny.json';
     }
   }
-
+  // دالة اختيار الخلفية بناءً على الوقت والطقس
   String? _getDynamicBackgroundAnimation() {
     if (_weather == null) return null;
 
     final condition = _weather!.mainCondition.toLowerCase();
     final now = DateTime.now();
-
+    // تحويل وقت الشروق والغروب
     final sunriseTime = DateTime.fromMillisecondsSinceEpoch(_weather!.sunrise * 1000);
     final sunsetTime = DateTime.fromMillisecondsSinceEpoch(_weather!.sunset * 1000);
-
+    // هل نحن في الليل؟ (بعد الغروب أو قبل الشروق)
     bool isNight = now.isAfter(sunsetTime) || now.isBefore(sunriseTime);
 
+// 1. حالة الصحو (Clear)
     if (condition.contains('clear')) {
+      // إذا ليل: clear_night.json، إذا نهار: clear_day.json
       return isNight ? 'lib/assets/clear_night.json' : 'lib/assets/clear_day.json';
     }
+
+    // 2. حالة المطر أو الرعد (Rain / Thunder)
     else if (condition.contains('rain') || condition.contains('drizzle') || condition.contains('thunder')) {
-      return isNight ? 'lib/assets/rainy_night.json' : 'lib/assets/thunder_day.json';
-    }
-    else if (condition.contains('cloud')) {
-      return isNight ? 'lib/assets/cloudy_night.json' : 'lib/assets/cloud.json';
+      // إذا ليل: rainy_night.json
+      if (isNight) {
+        return 'lib/assets/rainy_night.json';
+      }
+      // إذا نهار: thunder_day.json (كما طلبت للمطر الصباحي والرعد)
+      else {
+        return 'lib/assets/thunder_day.json';
+      }
     }
 
+    // 3. حالة الغيوم (Clouds)
+    else if (condition.contains('cloud')) {
+      // ليس لديك cloudy_night، لذا نستخدم cloudy.json في الحالتين
+      return isNight ? 'lib/assets/clear_night.json' : 'lib/assets/clear_day.json';
+    }
+
+    // الافتراضي
     return 'lib/assets/clear_day.json';
   }
 
