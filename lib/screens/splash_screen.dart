@@ -57,10 +57,10 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: 10),
             const Text(
-              "مهند & محمد",
+              "مهند نوح & محمد الشريف",
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 26,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
             ),

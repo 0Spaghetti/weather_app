@@ -7,7 +7,9 @@ import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import 'settings_page.dart';
-import 'dart:ui';
+import 'dart:ui'; // مهمة جداً للتأثير الزجاجي (BackdropFilter)
+import 'map_picker_page.dart';
+
 
 class WeatherPage extends StatefulWidget {
   const WeatherPage({super.key});
@@ -24,25 +26,67 @@ class _WeatherPageState extends State<WeatherPage> {
   bool _isLoading = true;
   final TextEditingController _cityController = TextEditingController(); // للتحكم في نص البحث
 
+
   @override
   void initState() {
     super.initState();
-    _loadLastCityAndFetch();
+    _loadLastCityAndFetch(); // نبدأ بتحميل آخر مدينة محفوظة أو الـ GPS
   }
+  Future<void> _fetchWeatherByCoordinates(double lat, double lon) async {
+    setState(() => _isLoading = true);
 
-  // دالة جديدة: تقرر هل نستخدم آخر مدينة محفوظة أم الـ GPS
-  Future<void> _loadLastCityAndFetch() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? savedCity = prefs.getString('last_city');
+    final lang = Provider.of<SettingsProvider>(context, listen: false).language;
 
-    if (savedCity != null && savedCity.isNotEmpty) {
-      await _fetchWeather(savedCity);
-    } else {
-      String currentCity = await _weatherService.getCurrentCity();
-      await _fetchWeather(currentCity);
+    try {
+      final weather =
+      await _weatherService.getWeatherByCoordinates(lat, lon, lang: lang);
+      final forecast =
+      await _weatherService.getForecastByCoordinates(lat, lon, lang: lang);
+      final hourly =
+      await _weatherService.getHourlyByCoordinates(lat, lon, lang: lang);
+
+      setState(() {
+        _weather = weather;
+        _forecast = forecast;
+        _hourlyForecast = hourly;
+        _isLoading = false;
+      });
+    } catch (_) {
+      setState(() => _isLoading = false);
     }
   }
 
+
+  // دالة جديدة: تقرر هل نستخدم آخر مدينة محفوظة أم الـ GPS
+  Future<void> _loadLastCityAndFetch() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final source = prefs.getString('last_source');
+
+    if (source == 'coords') {
+      final lat = prefs.getDouble('last_lat');
+      final lon = prefs.getDouble('last_lon');
+
+      if (lat != null && lon != null) {
+        await _fetchWeatherByCoordinates(lat, lon);
+        return;
+      }
+    }
+
+    // fallback to city name
+    final savedCity = prefs.getString('last_city');
+    if (savedCity != null && savedCity.isNotEmpty) {
+      await _fetchWeather(savedCity);
+      return;
+    }
+
+    // fallback to GPS
+    final currentCity = await _weatherService.getCurrentCity();
+    await _fetchWeather(currentCity);
+  }
+
+
+  // تعديل دالة جلب الطقس لتقبل اسم مدينة محدد
   Future<void> _fetchWeather(String cityName) async {
     setState(() => _isLoading = true);
     final lang = Provider.of<SettingsProvider>(context, listen: false).language;
@@ -59,9 +103,11 @@ class _WeatherPageState extends State<WeatherPage> {
         _isLoading = false;
       });
 
+      // حفظ اسم المدينة الناجحة في الذاكرة
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('last_city', cityName);
     } catch (e) {
+      // في حال الخطأ (مثلا اسم مدينة خاطئ)، أوقف التحميل وأظهر تنبيهاً بسيطاً
       setState(() => _isLoading = false);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -70,6 +116,25 @@ class _WeatherPageState extends State<WeatherPage> {
       );
     }
   }
+  Color _getButtonBackground(String? condition) {
+    if (condition == null) {
+      return Colors.blue.shade400;
+    }
+
+    switch (condition.toLowerCase()) {
+      case 'clear':
+        return Colors.orange.shade500; // close to sky
+      case 'clouds':
+        return Colors.grey.shade600;
+      case 'rain':
+        return Colors.blueGrey.shade600;
+      case 'thunderstorm':
+        return Colors.deepPurple.shade400;
+      default:
+        return Colors.blue.shade500;
+    }
+  }
+
 
   void _showDailyDetails(BuildContext context, WeatherModel day, bool isGlass, DateTime date) {
     final lang = Provider.of<SettingsProvider>(context, listen: false).language;
@@ -214,7 +279,7 @@ class _WeatherPageState extends State<WeatherPage> {
                   if (_cityController.text.isNotEmpty) {
                     Navigator.pop(context);
                     _fetchWeather(
-                        _cityController.text);
+                        _cityController.text); // ابحث عن المدينة الجديدة
                     _cityController.clear();
                   }
                 },
@@ -254,7 +319,7 @@ class _WeatherPageState extends State<WeatherPage> {
 
 // دالة لتحديد ملف الأنيميشن المناسب
   String _getWeatherAnimation(String? mainCondition) {
-    if (mainCondition == null) return 'lib/assets/sunny.json';
+    if (mainCondition == null) return 'lib/assets/sunny.json'; // القيمة الافتراضية
 
     switch (mainCondition.toLowerCase()) {
       case 'clouds':
@@ -276,40 +341,28 @@ class _WeatherPageState extends State<WeatherPage> {
         return 'lib/assets/sunny.json';
     }
   }
-  // دالة اختيار الخلفية بناءً على الوقت والطقس
+
   String? _getDynamicBackgroundAnimation() {
     if (_weather == null) return null;
 
     final condition = _weather!.mainCondition.toLowerCase();
     final now = DateTime.now();
-    // تحويل وقت الشروق والغروب
+
     final sunriseTime = DateTime.fromMillisecondsSinceEpoch(_weather!.sunrise * 1000);
     final sunsetTime = DateTime.fromMillisecondsSinceEpoch(_weather!.sunset * 1000);
-    // هل نحن في الليل؟ (بعد الغروب أو قبل الشروق)
+
     bool isNight = now.isAfter(sunsetTime) || now.isBefore(sunriseTime);
 
-// 1. حالة الصحو (Clear)
     if (condition.contains('clear')) {
-      // إذا ليل: clear_night.json، إذا نهار: clear_day.json
       return isNight ? 'lib/assets/clear_night.json' : 'lib/assets/clear_day.json';
     }
-
-    // 2. حالة المطر أو الرعد (Rain / Thunder)
     else if (condition.contains('rain') || condition.contains('drizzle') || condition.contains('thunder')) {
-      // إذا ليل: rainy_night.json
-      if (isNight) {
-        return 'lib/assets/rainy_night.json';
-      }
-      // إذا نهار: thunder_day.json ( للمطر الصباحي والرعد)
-      else {
-        return 'lib/assets/thunder_day.json';
-      }
+      return isNight ? 'lib/assets/rainy_night.json' : 'lib/assets/thunder_day.json';
+    }
+    else if (condition.contains('cloud')) {
+      return isNight ? 'lib/assets/cloudy_night.json' : 'lib/assets/cloud.json';
     }
 
-    // 3. حالة الغيوم (Clouds)
-    else if (condition.contains('cloud')) {
-      return isNight ? 'lib/assets/clear_night.json' : 'lib/assets/clear_day.json';
-    }
     return 'lib/assets/clear_day.json';
   }
 
@@ -317,26 +370,17 @@ class _WeatherPageState extends State<WeatherPage> {
   Widget build(BuildContext context) {
 
     final settings = Provider.of<SettingsProvider>(context);
-    
+
     return Scaffold(
-      // شريط العنوان وأزرار البحث
+      // شريط العنوان وأزرار البحث (كما هي)
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.my_location, color: Colors.white),
-          onPressed: () async {
-            SharedPreferences prefs = await SharedPreferences.getInstance();
-            prefs.remove('last_city');
-            String currentCity = await _weatherService.getCurrentCity();
-            _fetchWeather(currentCity);
-          },
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: () {
-              //  (لتطبيق تغيير اللغة)
+              // ننتقل للإعدادات، وعند العودة نحدث البيانات (لتطبيق تغيير اللغة)
               Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsPage()))
                   .then((_) => _loadLastCityAndFetch());
             },
@@ -345,9 +389,44 @@ class _WeatherPageState extends State<WeatherPage> {
             icon: const Icon(Icons.search, color: Colors.white, size: 28),
             onPressed: _showCitySearchDialog,
           ),
+          IconButton(
+            icon: const Icon(Icons.map, color: Colors.white),
+            onPressed: () async {
+              final result = await Navigator.push<Map<String, dynamic>>(
+                context,
+                MaterialPageRoute(builder: (_) => const MapPickerPage()),
+              );
+
+              if (result != null) {
+                final double lat = result['lat'];
+                final double lon = result['lon'];
+                final String? cityName = result['city'];
+
+                // 🔐 Save coordinates as last source
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setDouble('last_lat', lat);
+                await prefs.setDouble('last_lon', lon);
+                await prefs.setString('last_source', 'coords');
+
+
+
+
+                await _fetchWeatherByCoordinates(lat, lon);
+
+                if (cityName != null && mounted) {
+                  setState(() {
+                    _weather = _weather?.copyWith(cityName: cityName);
+                  });
+                }
+              }
+
+
+            },
+          ),
         ],
       ),
       extendBodyBehindAppBar: true,
+
 
       body: Stack(
         children: [
@@ -362,14 +441,14 @@ class _WeatherPageState extends State<WeatherPage> {
                child: Builder(
                  builder: (context) {
                    String? animFile = _getDynamicBackgroundAnimation();
-                   
+
                    if (animFile == null) return const SizedBox();
-                   
+
                    return Lottie.asset(
                      animFile,
                      fit: BoxFit.cover,
                      errorBuilder: (context, error, stackTrace) {
-                       return const SizedBox(); 
+                       return const SizedBox();
                      },
                    );
                  },
@@ -377,7 +456,9 @@ class _WeatherPageState extends State<WeatherPage> {
              ),
 
           SafeArea(
-            child: RefreshIndicator(
+            child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.white))
+            : RefreshIndicator(
               color: Colors.white,
               backgroundColor: Colors.blue.withOpacity(0.5),
               onRefresh: () async {
@@ -446,7 +527,7 @@ class _WeatherPageState extends State<WeatherPage> {
                                   Text(
                                     settings.isCelsius
                                         ? '${_weather?.temperature.round()}°C'
-                                        : '${(_weather!.temperature * 9 / 5 + 32).round()}°F',
+                                        : '${(_weather?.temperature != null ? _weather!.temperature * 9 / 5 + 32 : 0).round()}°F',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 65,
@@ -528,20 +609,23 @@ class _WeatherPageState extends State<WeatherPage> {
                   // --- Daily Forecast ---
                   if (_forecast != null && _forecast!.isNotEmpty)
                     Padding(
+                      // تعديل 1: إضافة مسافة سفلية لتجنب الالتصاق بأسفل الشاشة
                       padding: const EdgeInsets.only(left: 10.0, right: 10.0, bottom: 10.0),
 
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // تعديل 2: إعادة حجم الخط ليكون متناسقاً
                           Text(
                               settings.language == 'ar' ? "الأيام القادمة" : "DAILY FORECAST",
                               style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)
                           ),
 
+                          // تعديل 3: إضافة مسافة ضرورية بين العنوان والقائمة
                           const SizedBox(height: 10),
 
                           ListView.builder(
-                            padding: EdgeInsets.zero,
+                            padding: EdgeInsets.zero, // <--- أضف هذا السطر لإلغاء الحواف الافتراضية
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: _forecast!.length,
@@ -552,7 +636,7 @@ class _WeatherPageState extends State<WeatherPage> {
                                 onTap: () => _showDailyDetails(context, day, settings.enableGlassmorphism, date),
                                 child: Container(
                                   margin: const EdgeInsets.only(bottom: 10),
-                                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15), // زيادة الحشوة الرأسية قليلاً
                                   decoration: BoxDecoration(
                                     color: Colors.white.withOpacity(0.15),
                                     borderRadius: BorderRadius.circular(20),
@@ -571,17 +655,19 @@ class _WeatherPageState extends State<WeatherPage> {
                                       ),
                                       // الحرارة والأيقونة
                                       Row(
-                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisSize: MainAxisSize.min, // مهم جداً: يأخذ أقل مساحة ممكنة
                                         children: [
-
+                                          // --- التعديل الجذري هنا ---
+                                          // تحديد العرض والارتفاع معاً لمنع التمدد
                                           SizedBox(
                                             width: 40,
                                             height: 40,
                                             child: Lottie.asset(
                                                 _getWeatherAnimation(day.mainCondition),
-                                                fit: BoxFit.contain
+                                                fit: BoxFit.contain // احتواء الصورة داخل المربع
                                             ),
                                           ),
+                                          // -------------------------
 
                                           const SizedBox(width: 10),
                                           Text('${day.temperature.round()}°', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
@@ -604,6 +690,36 @@ class _WeatherPageState extends State<WeatherPage> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: _getButtonBackground(_weather?.mainCondition),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        elevation: 4,
+        child: const Icon(Icons.my_location, color: Colors.white),
+        onPressed: () async {
+          setState(() => _isLoading = true);
+
+          try {
+            SharedPreferences prefs =
+            await SharedPreferences.getInstance();
+            await prefs.remove('last_city');
+
+            String currentCity =
+            await _weatherService.getCurrentCity();
+            await _fetchWeather(currentCity);
+          } catch (_) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("فشل تحديد الموقع الحالي")),
+            );
+          }
+        },
+      ),
+
+
     );
   }
+
+
 }

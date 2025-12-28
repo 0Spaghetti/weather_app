@@ -182,7 +182,7 @@ class SettingsPage extends StatelessWidget {
               style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
             ),
             const SizedBox(height: 10),
-            Text(isArabic ? "تطوير الطالبين: مهند ومحمد" : "Developer: Mohaned & Mohammed", style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(isArabic ? "تطوير الطالبين: مهند نوح ومحمد الشريف" : "Developer: Mohaned & Mohammed", style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
         actions: [

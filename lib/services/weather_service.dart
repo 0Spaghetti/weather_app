@@ -8,90 +8,145 @@ class WeatherService {
   static const String apiKey = 'd0b5d0b5df6911813e6e6e7341bb3065';
   static const String baseUrl = 'https://api.openweathermap.org/data/2.5';
 
+  // ================= CITY NAME =================
   Future<WeatherModel> getWeather(String cityName, {String lang = 'ar'}) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/weather?q=$cityName&appid=$apiKey&units=metric&lang=$lang'),
+      Uri.parse(
+        '$baseUrl/weather?q=$cityName&appid=$apiKey&units=metric&lang=$lang',
+      ),
     );
 
     if (response.statusCode == 200) {
       return WeatherModel.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception('فشل تحميل بيانات الطقس');
+      throw Exception('Failed to load weather');
     }
   }
 
+  Future<List<WeatherModel>> getForecast(
+      String cityName, {String lang = 'ar'}) async {
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl/forecast?q=$cityName&appid=$apiKey&units=metric&lang=$lang',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final List list = data['list'];
+
+      return list
+          .where((e) => e['dt_txt'].contains('12:00:00'))
+          .map((e) => WeatherModel.fromForecastJson(e))
+          .toList();
+    } else {
+      throw Exception('Failed to load forecast');
+    }
+  }
+
+  Future<List<WeatherModel>> getHourlyForecast(
+      String cityName, {String lang = 'ar'}) async {
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl/forecast?q=$cityName&appid=$apiKey&units=metric&lang=$lang',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final List list = data['list'];
+
+      return list.take(8).map((e) => WeatherModel.fromForecastJson(e)).toList();
+    } else {
+      throw Exception('Failed to load hourly forecast');
+    }
+  }
+
+  // ================= COORDINATES =================
+  Future<WeatherModel> getWeatherByCoordinates(
+      double lat, double lon,
+      {String lang = 'ar'}) async {
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl/weather?lat=$lat&lon=$lon&appid=$apiKey&units=metric&lang=$lang',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      return WeatherModel.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to load weather by coordinates');
+    }
+  }
+
+  Future<List<WeatherModel>> getForecastByCoordinates(
+      double lat, double lon,
+      {String lang = 'ar'}) async {
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl/forecast?lat=$lat&lon=$lon&appid=$apiKey&units=metric&lang=$lang',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final List list = data['list'];
+
+      return list
+          .where((e) => e['dt_txt'].contains('12:00:00'))
+          .map((e) => WeatherModel.fromForecastJson(e))
+          .toList();
+    } else {
+      throw Exception('Failed to load forecast by coordinates');
+    }
+  }
+
+  Future<List<WeatherModel>> getHourlyByCoordinates(
+      double lat, double lon,
+      {String lang = 'ar'}) async {
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl/forecast?lat=$lat&lon=$lon&appid=$apiKey&units=metric&lang=$lang',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final List list = data['list'];
+
+      return list.take(8).map((e) => WeatherModel.fromForecastJson(e)).toList();
+    } else {
+      throw Exception('Failed to load hourly by coordinates');
+    }
+  }
+
+  // ================= GPS CITY (UI ONLY) =================
   Future<String> getCurrentCity() async {
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
+      if (!await Geolocator.isLocationServiceEnabled()) {
         return "Tripoli";
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          return "Tripoli";
-        }
       }
 
-      if (permission == LocationPermission.deniedForever) {
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
         return "Tripoli";
       }
 
-      Position position = await Geolocator.getCurrentPosition(
+      final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
+      final placemarks =
+      await placemarkFromCoordinates(position.latitude, position.longitude);
 
-      if (placemarks.isNotEmpty) {
-        String? city = placemarks[0].locality;
-        return city ?? placemarks[0].administrativeArea ?? "Tripoli";
-      } else {
-        return "Tripoli";
-      }
-
-    } catch (e) {
-      print("حدث خطأ في تحديد الموقع: $e");
+      return placemarks.first.locality ?? "Tripoli";
+    } catch (_) {
       return "Tripoli";
-    }
-  }
-
-  // دالة لجلب توقعات 5 أيام
-  Future<List<WeatherModel>> getForecast(String cityName, {String lang = 'ar'}) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/forecast?q=$cityName&appid=$apiKey&units=metric&lang=$lang'),
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final List<dynamic> list = data['list'];
-
-      return list
-          .where((item) => item['dt_txt'].contains('12:00:00'))
-          .map((item) => WeatherModel.fromJson(item))
-          .toList();
-    } else {
-      throw Exception('فشل تحميل التوقعات');
-    }
-  }
-  // دالة لجلب التوقعات بالساعات (أول 8 قراءات = 24 ساعة)
-  Future<List<WeatherModel>> getHourlyForecast(String cityName, {String lang = 'ar'}) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/forecast?q=$cityName&appid=$apiKey&units=metric&lang=$lang'),
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final List<dynamic> list = data['list'];
-
-      return list.take(8).map((item) => WeatherModel.fromJson(item)).toList();
-    } else {
-      throw Exception('فشل تحميل توقعات الساعات');
     }
   }
 }
