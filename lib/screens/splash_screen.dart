@@ -42,8 +42,8 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
             // 2. استبدال الأيقونة الثابتة بأنيميشن متحرك
             Lottie.asset(
-              'lib/assets/sunny.json', // مسار ملف الأنيميشن
-              height: 200, // التحكم بالحجم
+              'lib/assets/splashscreenanimation.json', // مسار ملف الأنيميشن
+              height: 400, // التحكم بالحجم
             ),
 
             const SizedBox(height: 20),
@@ -59,8 +59,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
             const SizedBox(height: 50),
 
-            const CircularProgressIndicator(
-              color: Colors.white,
+            Lottie.asset(
+              'lib/assets/wave_loading.json',
+              height: 100,
             ),
 
             const SizedBox(height: 50),
@@ -71,10 +72,10 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: 10),
             const Text(
-              "Dev: مهند & محمد", // ⚠️ لا تنس كتابة اسمك
+              "مهند & محمد", // ⚠️ لا تنس كتابة اسمك
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 22,
+                fontSize: 26,
                 fontWeight: FontWeight.bold,
               ),
             ),

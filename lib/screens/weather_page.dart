@@ -337,18 +337,7 @@ class _WeatherPageState extends State<WeatherPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.location_on, color: Colors.white, size: 30),
-                  const SizedBox(height: 10),
-                  Text(
-                    _weather?.cityName.toUpperCase() ?? "",
-                    style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    DateFormat('EEEE, d MMMM yyyy | hh:mm a', settings.language).format(DateTime.now()),
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 30),
                   GestureDetector(
                     onTap: () {
                       bool isGlassMode = settings.enableGlassmorphism || settings.isDarkMode;
@@ -359,7 +348,7 @@ class _WeatherPageState extends State<WeatherPage> {
                         Widget mainCard = Container(
                           width: double.infinity,
                           margin: const EdgeInsets.symmetric(horizontal: 20),
-                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(30),
@@ -368,18 +357,46 @@ class _WeatherPageState extends State<WeatherPage> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.location_on, color: Colors.white, size: 24),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    _weather?.cityName.toUpperCase() ?? "",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 5),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  DateFormat('EEEE, d MMMM | hh:mm a', settings.language).format(DateTime.now()),
+                                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
                               Lottie.asset(
                                 _getWeatherAnimation(_weather?.mainCondition),
-                                height: 160,
+                                height: 150,
                               ),
-                              const SizedBox(height: 10),
                               Text(
                                 settings.isCelsius
                                     ? '${_weather?.temperature.round()}°C'
                                     : '${(_weather!.temperature * 9 / 5 + 32).round()}°F',
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 70,
+                                  fontSize: 65,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -387,12 +404,12 @@ class _WeatherPageState extends State<WeatherPage> {
                                 _weather?.mainCondition ?? "",
                                 style: const TextStyle(
                                   color: Colors.white70,
-                                  fontSize: 24,
+                                  fontSize: 22,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
                               const SizedBox(height: 10),
-                              Icon(Icons.keyboard_arrow_up, color: Colors.white.withOpacity(0.5), size: 20),
+                              Icon(Icons.keyboard_arrow_up, color: Colors.white.withOpacity(0.5), size: 24),
                             ],
                           ),
                         );
@@ -421,7 +438,6 @@ class _WeatherPageState extends State<WeatherPage> {
                       children: [
                         Text(settings.language == 'ar' ? "توقعات الساعات القادمة" : "HOURLY FORECAST", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 10),
-
                         SizedBox(
                           height: 120,
                           child: ListView.builder(

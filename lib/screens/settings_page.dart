@@ -144,7 +144,7 @@ class SettingsPage extends StatelessWidget {
             ),
 
             Text(
-              "v1.0.0",
+              "v1.7.0",
               style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
             ),
           ],
@@ -166,12 +166,12 @@ class SettingsPage extends StatelessWidget {
             Icon(Icons.cloud_circle, size: 60, color: Colors.blue),
             const SizedBox(height: 10),
             Text(
-              isArabic ? "تم تطوير هذا التطبيق كجزء من مشروع جامعي." : "Developed as a university project.",
+              isArabic ? "تم تطوير هذا التطبيق كجزء من مشروع مادة (ITMC323)." : "Developed as a university project.",
               textAlign: TextAlign.center,
               style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
             ),
             const SizedBox(height: 10),
-            Text(isArabic ? "تطوير الطالب: [اسمك هنا]" : "Developer: [Your Name]", style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(isArabic ? "تطوير الطالبين: مهند ومحمد" : "Developer: Mohaned & Mohammed", style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
         actions: [
