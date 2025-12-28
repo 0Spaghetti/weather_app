@@ -281,6 +281,30 @@ class _WeatherPageState extends State<WeatherPage> {
     }
   }
 
+  String? _getDynamicBackgroundAnimation() {
+    if (_weather == null) return null;
+
+    final condition = _weather!.mainCondition.toLowerCase();
+    final now = DateTime.now();
+
+    final sunriseTime = DateTime.fromMillisecondsSinceEpoch(_weather!.sunrise * 1000);
+    final sunsetTime = DateTime.fromMillisecondsSinceEpoch(_weather!.sunset * 1000);
+
+    bool isNight = now.isAfter(sunsetTime) || now.isBefore(sunriseTime);
+
+    if (condition.contains('clear')) {
+      return isNight ? 'lib/assets/clear_night.json' : 'lib/assets/clear_day.json';
+    }
+    else if (condition.contains('rain') || condition.contains('drizzle') || condition.contains('thunder')) {
+      return isNight ? 'lib/assets/rainy_night.json' : 'lib/assets/thunder_day.json';
+    }
+    else if (condition.contains('cloud')) {
+      return isNight ? 'lib/assets/cloudy_night.json' : 'lib/assets/cloud.json';
+    }
+
+    return 'lib/assets/clear_day.json';
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -317,118 +341,139 @@ class _WeatherPageState extends State<WeatherPage> {
       ),
       extendBodyBehindAppBar: true,
 
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: _getBackgroundGradient(_weather?.mainCondition),
-        ),
-        // --- 1. ميزة سحب للتحديث (Pull to Refresh) ---
-        child: RefreshIndicator(
-          color: Colors.white, // لون دائرة التحميل
-          backgroundColor: Colors.blue.withOpacity(0.5),
-          onRefresh: () async {
-            // عند السحب، نقوم بإعادة تحميل البيانات لنفس المدينة
-            await _loadLastCityAndFetch();
-          },
-          // نستخدم SingleChildScrollView لجعل الشاشة قابلة للسحب دائماً
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.only(top: 100, bottom: 20), // مسافة من الأعلى (عشان الـ AppBar) ومن الأسفل
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 30),
-                  GestureDetector(
-                    onTap: () {
-                      bool isGlassMode = settings.enableGlassmorphism || settings.isDarkMode;
-                      _showCurrentDetails(context, isGlassMode);
-                    },
-                    child: Builder(
-                      builder: (context) {
-                        Widget mainCard = Container(
-                          width: double.infinity,
-                          margin: const EdgeInsets.symmetric(horizontal: 20),
-                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: Colors.white.withOpacity(0.2)),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: _getBackgroundGradient(_weather?.mainCondition),
+            ),
+          ),
+
+          if (settings.isDynamicBackground && _weather != null)
+             Positioned.fill(
+               child: Builder(
+                 builder: (context) {
+                   String? animFile = _getDynamicBackgroundAnimation();
+                   
+                   if (animFile == null) return const SizedBox();
+                   
+                   return Lottie.asset(
+                     animFile,
+                     fit: BoxFit.cover,
+                     errorBuilder: (context, error, stackTrace) {
+                       return const SizedBox(); 
+                     },
+                   );
+                 },
+               ),
+             ),
+
+          SafeArea(
+            child: RefreshIndicator(
+              color: Colors.white,
+              backgroundColor: Colors.blue.withOpacity(0.5),
+              onRefresh: () async {
+                await _loadLastCityAndFetch();
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 20, bottom: 20),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 30),
+                      GestureDetector(
+                        onTap: () {
+                          bool isGlassMode = settings.enableGlassmorphism || settings.isDarkMode;
+                          _showCurrentDetails(context, isGlassMode);
+                        },
+                        child: Builder(
+                          builder: (context) {
+                            Widget mainCard = Container(
+                              width: double.infinity,
+                              margin: const EdgeInsets.symmetric(horizontal: 20),
+                              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(30),
+                                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.location_on, color: Colors.white, size: 24),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    _weather?.cityName.toUpperCase() ?? "",
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1.0,
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.location_on, color: Colors.white, size: 24),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        _weather?.cityName.toUpperCase() ?? "",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.0,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      DateFormat('EEEE, d MMMM | hh:mm a', settings.language).format(DateTime.now()),
+                                      style: const TextStyle(color: Colors.white70, fontSize: 12),
                                     ),
                                   ),
+                                  const SizedBox(height: 20),
+                                  Lottie.asset(
+                                    _getWeatherAnimation(_weather?.mainCondition),
+                                    height: 150,
+                                  ),
+                                  Text(
+                                    settings.isCelsius
+                                        ? '${_weather?.temperature.round()}°C'
+                                        : '${(_weather!.temperature * 9 / 5 + 32).round()}°F',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 65,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    _weather?.mainCondition ?? "",
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Icon(Icons.keyboard_arrow_up, color: Colors.white.withOpacity(0.5), size: 24),
                                 ],
                               ),
-                              const SizedBox(height: 5),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  DateFormat('EEEE, d MMMM | hh:mm a', settings.language).format(DateTime.now()),
-                                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              Lottie.asset(
-                                _getWeatherAnimation(_weather?.mainCondition),
-                                height: 150,
-                              ),
-                              Text(
-                                settings.isCelsius
-                                    ? '${_weather?.temperature.round()}°C'
-                                    : '${(_weather!.temperature * 9 / 5 + 32).round()}°F',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 65,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                _weather?.mainCondition ?? "",
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Icon(Icons.keyboard_arrow_up, color: Colors.white.withOpacity(0.5), size: 24),
-                            ],
-                          ),
-                        );
+                            );
 
-                        if (settings.enableGlassmorphism) {
-                          return ClipRRect(
-                            borderRadius: BorderRadius.circular(30),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                              child: mainCard,
-                            ),
-                          );
-                        } else {
-                          return mainCard;
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 30),
+                            if (settings.enableGlassmorphism) {
+                              return ClipRRect(
+                                borderRadius: BorderRadius.circular(30),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                  child: mainCard,
+                                ),
+                              );
+                            } else {
+                              return mainCard;
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 30),
                   // --- Hourly Forecast ---
                   if (_hourlyForecast != null && _hourlyForecast!.isNotEmpty)
                   Padding(
@@ -548,11 +593,13 @@ class _WeatherPageState extends State<WeatherPage> {
                         ],
                       ),
                     ),
-                ],
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

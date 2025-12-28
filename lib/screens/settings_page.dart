@@ -57,6 +57,17 @@ class SettingsPage extends StatelessWidget {
                 ),
                 _buildDivider(isDark),
                 _buildCustomTile(
+                  title: isArabic ? "خلفية متحركة" : "Dynamic Background",
+                  subtitle: isArabic ? "تغيير الخلفية حسب الوقت والطقس" : "Animate background based on time",
+                  icon: Icons.movie_filter, // أيقونة معبرة
+                  iconColor: Colors.deepPurpleAccent,
+                  isSwitch: true,
+                  value: settings.isDynamicBackground,
+                  onChanged: (val) => settings.toggleDynamicBackground(val),
+                  isDark: isDark,
+                ),
+                _buildDivider(isDark),
+                _buildCustomTile(
                   title: isArabic ? "تأثير الزجاج" : "Glassmorphism",
                   icon: Icons.blur_on,
                   iconColor: Colors.blue,

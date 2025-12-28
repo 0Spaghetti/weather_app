@@ -10,6 +10,7 @@ class SettingsProvider with ChangeNotifier {
   bool _showSunDetails = true;
   bool _useCardLayout = false;
   String _language = 'ar'; // 'ar' or 'en'
+  bool _isDynamicBackground = false;
 
   // استدعاء القيم لقراءتها
   bool get isDarkMode => _isDarkMode;
@@ -18,6 +19,8 @@ class SettingsProvider with ChangeNotifier {
   bool get showSunDetails => _showSunDetails;
   bool get useCardLayout => _useCardLayout;
   String get language => _language;
+  bool get isDynamicBackground => _isDynamicBackground;
+
 
   // تحميل الإعدادات المحفوظة عند فتح التطبيق
   Future<void> loadSettings() async {
@@ -28,6 +31,8 @@ class SettingsProvider with ChangeNotifier {
     _showSunDetails = prefs.getBool('showSun') ?? true;
     _language = prefs.getString('language') ?? 'ar';
     _useCardLayout = prefs.getBool('useCardLayout') ?? false;
+    notifyListeners();
+    _isDynamicBackground = prefs.getBool('isDynamicBackground') ?? false; // تحميل القيمة
     notifyListeners();
   }
 
@@ -71,6 +76,13 @@ class SettingsProvider with ChangeNotifier {
     _useCardLayout = value;
     final prefs = await SharedPreferences.getInstance();
     prefs.setBool('useCardLayout', value);
+    notifyListeners();
+  }
+
+  void toggleDynamicBackground(bool value) async {
+    _isDynamicBackground = value;
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setBool('isDynamicBackground', value);
     notifyListeners();
   }
 }
