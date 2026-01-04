@@ -2,14 +2,6 @@
 
 تطبيق متكامل لمعرفة حالة الطقس تم بناؤه باستخدام إطار عمل **Flutter**. يتميز التطبيق بتصميم عصري وجذاب يدعم الرسوم المتحركة (Animations) وميزات متقدمة مثل تحديد الموقع عبر الخريطة.
 
-## 📱 لقطات الشاشة (Screenshots)
-
-| الصفحة الرئيسية | البحث والخريطة | الإعدادات |
-<img width="1440" height="2955" alt="Screenshot_20260104_074813_ " src="https://github.com/user-attachments/assets/bc5403b8-5cf5-41c3-94cd-c11031f9c641" />
-<img width="1440" height="2939" alt="Screenshot_20260104_074802_ " src="https://github.com/user-attachments/assets/13754fc9-cd3a-4e20-be51-d9752c2d799c" />
-<img width="1440" height="2929" alt="Screenshot_20260104_074932_ " src="https://github.com/user-attachments/assets/98a8f7ab-613a-4783-9a53-f8dbda5f333c" />
-<img width="1440" height="2957" alt="Screenshot_20260104_074821_ " src="https://github.com/user-attachments/assets/bd320c64-f8a8-44ae-8077-38d037d304f3" />
-
 ## ✨ المميزات الرئيسية
 
 * **عرض الطقس الحالي:** درجة الحرارة، الرطوبة، سرعة الرياح، ووقت الشروق والغروب.
@@ -29,3 +21,12 @@
 ## 🛠️ التقنيات المستخدمة (Tech Stack)
 
 Fultter & Dart
+
+
+## 📱 لقطات الشاشة (Screenshots)
+
+| الصفحة الرئيسية | البحث والخريطة | الإعدادات |
+<img width="1440" height="2955" alt="Screenshot_20260104_074813_ " src="https://github.com/user-attachments/assets/bc5403b8-5cf5-41c3-94cd-c11031f9c641" />
+<img width="1440" height="2939" alt="Screenshot_20260104_074802_ " src="https://github.com/user-attachments/assets/13754fc9-cd3a-4e20-be51-d9752c2d799c" />
+<img width="1440" height="2929" alt="Screenshot_20260104_074932_ " src="https://github.com/user-attachments/assets/98a8f7ab-613a-4783-9a53-f8dbda5f333c" />
+<img width="1440" height="2957" alt="Screenshot_20260104_074821_ " src="https://github.com/user-attachments/assets/bd320c64-f8a8-44ae-8077-38d037d304f3" />
