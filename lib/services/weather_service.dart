@@ -4,7 +4,6 @@ import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
 import '../models/weather_model.dart';
 
-// كلاس النتائج المجمعة
 class ForecastResult {
   final List<WeatherModel> hourly;
   final List<WeatherModel> daily;

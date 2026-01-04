@@ -84,7 +84,7 @@ class WeatherUtils {
           ? 'lib/assets/rainy_night.json'
           : 'lib/assets/thunder_day.json';
     } else if (condition.contains('cloud')) {
-      return isNight ? 'lib/assets/clear_night.json' : 'lib/assets/clear_night.json';
+      return isNight ? 'lib/assets/clear_night.json' : 'lib/assets/clear_day.json';
     }
 
     return isNight ? 'lib/assets/clear_night.json' : 'lib/assets/clear_day.json';
